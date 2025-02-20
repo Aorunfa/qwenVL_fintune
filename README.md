@@ -6,7 +6,7 @@
 模型设计上本质与llava类似，使用一个vit作为vision encoder，使用一个训练好llm作为vison-text decoder，中间增加一个adapter将vison token与text token进行聚合
 
 <div align="center">
-  <img src="qwenVL_fintune/doc/qwenVL.png" alt="qwenVL" width="821" height="319">
+  <img src="doc/qwenVL.png" alt="qwenVL" width="821" height="319">
   <p style="font-size: 10px; color: gray;">qwenVL结构</p>
 </div>
 
@@ -34,7 +34,7 @@ image patch process将image resize到固定的分辨率，e.g 224×224，patch s
 在qwenVL的基础上增加支持输入图片任意分辨率提取相应数量的vision token。对于token数量变化，沿用绝对位置编码标记位置信息变得困难，改进使用相对位置编码。
 
 <div align="center">
-  <img src="qwenVL_fintune/doc/qwenVL2.png" alt="qwenVL2" width="630" height="398">
+  <img src="doc/qwenVL2.png" alt="qwenVL2" width="630" height="398">
   <p style="font-size: 10px; color: gray;">qwenVL2结构</p>
 </div>
 
@@ -49,7 +49,7 @@ image patch process将image resize到固定的分辨率，e.g 224×224，patch s
 多模态旋转位置编码：embedding的位置编码将ROPE解构成三个维度，时间，空间height，空间width。位置标记序号(t, h, w)，t用于定位视频帧号，(h, w)用于定位帧的patch位置。文本的三个坐标相同，取上一个模态的max(t, h, w)。
 
 <div align="center">
-  <img src="qwenVL_fintune/doc/mrope.png" alt="mrope" width="925" height="289">
+  <img src="doc/mrope.png" alt="mrope" width="925" height="289">
   <p style="font-size: 10px; color: gray;">mrope示意</p>
 </div>
 
