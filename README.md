@@ -23,7 +23,7 @@
 将image resize到固定的分辨率，e.g 224×224，patch size设置为14提取vison token
 
 **training**:   
-包含两个预训练和一个指令微调阶段，qwenVL相较于llava的优势在于: 文档图片解析与理解、目标定位、多图对比能力
+包含两个预训练和一个指令微调阶段，qwenVL相较于llava的优势在于: 文档图片解析理解、目标定位、多图对比
 * stage 1 对齐预训练：冻结llm全量训练vision-encoder和adapter, 输入图片resize到224×224
 * stage 2 多任务预训练：全量训练整个模型, 输入图片resize到448×448。增加OCR、caption、VQA、Grounding等各类任务混合数据
 * stage 3 指令微调：冻结vison-encoder全量微调adaptor和llm。混合多模态和纯文本对话数据，多模态数据增加位置信息相关的数据，纯文本数据用于保持模型的对话能力
@@ -36,7 +36,7 @@
   <p style="font-size: 10px; color: gray;">qwenVL2结构</p>
 </div>
 
-**朴素动态分辨率机制**: 捕捉相对位置，减少token数量
+**动态分辨率支持**: 捕捉相对位置，减少token数量
 * 相对位置编码： vision encoder使用2D-ROPE进行位置编码
 * 相邻token特征合并：对提取得到的visual token特征还原位置关系，使用一个MLP层对相邻的2×2的token feature合并为一个token
 * e.g 224×224图片patch_size为14，可以提取num_vison_token = 224 / 14 / 2 * 224 / 14 / 2 = 64，最后前后增加一个标志token，合计66个
@@ -83,7 +83,6 @@ M-ROPE在时间维度上分配patch ID自适应fps, 基本逻辑是fps越小 -->
 
 
 ## 微调实战
-
 环境准备
 
 数据下载
