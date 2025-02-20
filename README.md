@@ -5,6 +5,11 @@
 
 模型设计上本质与llava类似，使用一个vit作为vision encoder，使用一个训练好llm作为vison-text decoder，中间增加一个adapter将vison token与text token进行聚合
 
+<div align="center">
+  <img src="qwenVL_fintune/doc/qwenVL.png" alt="qwenVL" width="821" height="319">
+  <p style="font-size: 10px; color: gray;">qwenVL结构</p>
+</div>
+
 vison encoder使用vit结构，权重初始化石红clip模型。llm使用qwen系列。
 
 adapter (Position-aware Vision-Language Adapter) 由一个cross-attention层构成，使用一个长度固定embedding矩阵作为query，key和value由vison token得到，查询最终得到固定长度的vison feature token。这其中需要注意的是：
@@ -28,6 +33,11 @@ image patch process将image resize到固定的分辨率，e.g 224×224，patch s
 ## qwenVL2
 在qwenVL的基础上增加支持输入图片任意分辨率提取相应数量的vision token。对于token数量变化，沿用绝对位置编码标记位置信息变得困难，改进使用相对位置编码。
 
+<div align="center">
+  <img src="qwenVL_fintune/doc/qwenVL2.png" alt="qwenVL2" width="630" height="398">
+  <p style="font-size: 10px; color: gray;">qwenVL2结构</p>
+</div>
+
 朴素动态分辨率机制：捕捉相对位置，减少token数量
 
 * 相对位置编码： vision encoder使用2D-ROPE进行位置编码
@@ -37,6 +47,11 @@ image patch process将image resize到固定的分辨率，e.g 224×224，patch s
 * e.g 224×224图片patch_size为14，可以提取num_vison_token = 224 / 14 / 2 * 224 / 14 / 2 = 64，最后前后增加一个标志token，合计66个
 
 多模态旋转位置编码：embedding的位置编码将ROPE解构成三个维度，时间，空间height，空间width。位置标记序号(t, h, w)，t用于定位视频帧号，(h, w)用于定位帧的patch位置。文本的三个坐标相同，取上一个模态的max(t, h, w)。
+
+<div align="center">
+  <img src="qwenVL_fintune/doc/mrope.png" alt="mrope" width="925" height="289">
+  <p style="font-size: 10px; color: gray;">mrope示意</p>
+</div>
 
 统一视频和图片理解：使用深度为2的3D卷积提取patch，视频每秒取两帧，为了统一，图片需要copy为两张。动态调整视频帧分辨率，是的最终token数量低于最大值阈值。
 
