@@ -1,5 +1,5 @@
 # qwenVL_fintune
-一个微调qwenVL系列的仓库。总结qwenVL系列差异，对比llval
+一个微调qwenVL系列的仓库。总结qwenVL系列差异，对比llava
 
 ## 01 qwenVL
 模型设计上本质与llava类似，使用一个vit模型作为vision encoder，使用一个训练好llm作为vison-text decoder，中间增加一个adapter将vison token与text token进行对齐
@@ -61,12 +61,12 @@ embedding的位置编码将ROPE解构成三个维度，时间，空间height，�
 在qwenVL2的基础上改进视频帧抽样规则，自适应fps，将视频绝对时间对齐。另一方面，vison encoder采用窗口注意力，只在最后一层使用全局注意力，同时增加llm中常见的RMSNorm和FFN+SwiGLU的操作。
 
 <div align="center">
-  <img src="doc/qwenVL2-5.png" alt="qwenVL2-5" width="976" height="628">
+  <img src="doc/qwenVL2-5.png" alt="qwenVL2-5" width="488" height="314">
   <p style="font-size: 10px; color: gray;">qwenVL2-5结构</p>
 </div>
 
 ### 自适应fps采样
-M-ROPE在时间维度上分配patch ID自适应fps, 基本逻辑是fps越小 --> 视频越慢放采 --> 样间距应该越大 --> 采样数量越小。
+M-ROPE在时间维度上分配patch ID自适应fps, 基本逻辑是fps越小 --> 视频越慢放采 --> 采样样间距应该越大 --> 相同时长采样数量越小。
 > 假设标准8秒视频fps=2，每一秒采样1帧，采样8帧。降低到1fps，原来的1秒变两秒，应该每两秒采样1帧。降低到0.5fps，原理的1秒变四秒，应该每四秒采样1帧。需要注意的是，不同的fps的path ID仍然按照每秒两个进行编号，推测通过采用数量和编号，模型能够学会视频流的速率差异。
 
 ### 混合高效的vison encoder
