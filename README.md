@@ -3,26 +3,26 @@
 
 ## 01 qwenVL
 
-模型设计上本质与llava类似，使用一个vit作为vision encoder，使用一个训练好llm作为vison-text decoder，中间增加一个adapter将vison token与text token进行聚合
+模型设计上本质与llava类似，使用一个vit模型作为vision encoder，使用一个训练好llm作为vison-text decoder，中间增加一个adapter将vison token与text token进行对齐
 
 <div align="center">
   <img src="doc/qwenVL.png" alt="qwenVL" width="821" height="319">
   <p style="font-size: 10px; color: gray;">qwenVL结构</p>
 </div>
 
-**vison encoder**:   
+### vison encoder:   
 使用vit结构，权重初始化石红clip模型。llm使用qwen系列。
 
-**adapter** (Position-aware Vision-Language Adapter):   
+### adapter (Position-aware Vision-Language Adapter):   
 由一个cross-attention层构成，使用一个长度固定embedding矩阵作为query，key和value由vison token得到，查询最终得到固定长度的vison feature token。这其中需要注意的是：
 * query是可学习参数
 * vison feature token的sequence长度固定
 * attention操作增加三角位置编码，标记位置信息
 
-**image process**:  
+### image process**:  
 将image resize到固定的分辨率，e.g 224×224，patch size设置为14提取vison token
 
-**training**:   
+### training:   
 包含两个预训练和一个指令微调阶段，qwenVL相较于llava的优势在于: 文档图片解析理解、目标定位、多图对比
 * stage 1 对齐预训练：冻结llm全量训练vision-encoder和adapter, 输入图片resize到224×224
 * stage 2 多任务预训练：全量训练整个模型, 输入图片resize到448×448。增加OCR、caption、VQA、Grounding等各类任务混合数据
@@ -80,6 +80,7 @@ M-ROPE在时间维度上分配patch ID自适应fps, 基本逻辑是fps越小 -->
 ## 04 qwenVL系列与llava主要差异  
 * adapter: qwenVL系列采用cross-attention，query使用可学习的embedding矩阵。llava采用一个MLP层
 * image patch process: qwenVL2后采用ROPE，llava沿用vit的三角绝对位置编码，后续为了加强位置关系捕捉，llava-1.6对一张图片裁剪四个区域和中间区域五张图作为输入
+* trainning: qwenVL系列要经历全量训练的过程，llava只训练一个adapter和微调llm，训练效率更高
 
 
 ## 微调实战
