@@ -61,7 +61,7 @@ embedding的位置编码将ROPE解构成三个维度，时间，空间height，�
 在qwenVL2的基础上改进视频帧抽样规则，自适应fps，将视频绝对时间对齐。另一方面，vison encoder采用窗口注意力，只在最后一层使用全局注意力，同时增加llm中常见的RMSNorm和FFN+SwiGLU的操作。
 
 <div align="center">
-  <img src="doc/qwenVL2-5.png" alt="qwenVL2-5" width="488" height="314">
+  <img src="doc/qwenVL2-5.png" alt="qwenVL2-5" width="634" height="408">
   <p style="font-size: 10px; color: gray;">qwenVL2-5结构</p>
 </div>
 
