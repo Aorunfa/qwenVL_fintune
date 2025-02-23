@@ -10,6 +10,7 @@
 
 **vison encoder**
 > 使用vit结构，权重初始化石红clip模型。llm使用qwen系列。
+
 **adapter (Position-aware Vision-Language Adapter)**
 由一个cross-attention层构成，使用一个长度固定embedding矩阵作为query，key和value由vison token得到，查询最终得到固定长度的vison feature token。这其中需要注意的是：
 > query是可学习参数
@@ -21,9 +22,9 @@
 
 ### training
 包含两个预训练和一个指令微调阶段，qwenVL相较于llava的优势在于: 文档图片解析理解、目标定位、多图对比
-* stage 1 对齐预训练：冻结llm全量训练vision-encoder和adapter, 输入图片resize到224×224
-* stage 2 多任务预训练：全量训练整个模型, 输入图片resize到448×448。增加OCR、caption、VQA、Grounding等各类任务混合数据
-* stage 3 指令微调：冻结vison-encoder全量微调adaptor和llm。混合多模态和纯文本对话数据，多模态数据增加位置信息相关的数据，纯文本数据用于保持模型的对话能力
+> stage 1 对齐预训练：冻结llm全量训练vision-encoder和adapter, 输入图片resize到224×224
+> stage 2 多任务预训练：全量训练整个模型, 输入图片resize到448×448。增加OCR、caption、VQA、Grounding等各类任务混合数据
+> stage 3 指令微调：冻结vison-encoder全量微调adaptor和llm。混合多模态和纯文本对话数据，多模态数据增加位置信息相关的数据，纯文本数据用于保持模型的对话能力
 
 ## 02 qwenVL2
 在qwenVL的基础上增加支持输入图片任意分辨率提取相应数量的vision token。对于token数量变化，沿用绝对位置编码标记位置信息变得困难，改进使用相对位置编码。
