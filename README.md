@@ -2,9 +2,7 @@
 一个微调qwenVL系列的仓库。总结qwenVL系列差异，对比llval
 
 ## 01 qwenVL
-
 模型设计上本质与llava类似，使用一个vit模型作为vision encoder，使用一个训练好llm作为vison-text decoder，中间增加一个adapter将vison token与text token进行对齐
-
 <div align="center">
   <img src="doc/qwenVL.png" alt="qwenVL" width="821" height="319">
   <p style="font-size: 10px; color: gray;">qwenVL结构</p>
