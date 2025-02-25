@@ -1,5 +1,5 @@
 # qwenVL_fintune
-一个微调qwenVL系列的仓库。总结qwenVL系列差异，对比llava
+一个微调qwenVL系列的仓库。总结qwenVL系列模型原理，对比llava。
 
 ## 01 qwenVL
 模型设计上本质与llava类似，使用一个vit模型作为vision encoder，使用一个训练好llm作为vison-text decoder，中间增加一个adapter将vison token与text token进行对齐
@@ -41,9 +41,9 @@
 * e.g 224×224图片patch_size为14，可以提取num_vison_token = 224 / 14 / 2 * 224 / 14 / 2 = 64，最后前后增加一个标志token，合计66个  
 
 ### adapter
-从qwen2VL开始，使用2×MLP层替换cross-attention作为adaptor，以支持动态token数量的改变。这一改动应该是参照了Llava的实验，MLP层在对齐模态信息上是高效的
+从qwen2VL开始，使用2×MLP层替换cross-attention作为adapter，以支持动态token数量的改变。这一改动应该是参照了Llava的实验，证明了MLP层在对齐模态信息上的高效性
 <div align="center">
-  <img src="doc/qwen2VL_adapter.png" alt="mlp adapter" width="412" height="90">
+  <img src="doc/qwen2VL_adapter.png" alt="mlp adapter" width="600" height="120">
   <p style="font-size: 10px; color: gray;">mlp adapter</p>
 </div>
 
