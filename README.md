@@ -40,9 +40,15 @@
 * 相邻token特征合并降采用: 对提取得到的visual token特征还原位置关系，使用一个MLP层对相邻的2×2的token feature合并为一个token  
 * e.g 224×224图片patch_size为14，可以提取num_vison_token = 224 / 14 / 2 * 224 / 14 / 2 = 64，最后前后增加一个标志token，合计66个  
 
+### adapter
+从qwen2VL开始，使用2×MLP层替换cross-attention作为adaptor，以支持动态token数量的改变。这一改动应该是参照了Llava的实验，MLP层在对齐模态信息上是高效的
+<div align="center">
+  <img src="doc/qwen2VL_adapter.png" alt="mlp adapter" width="412" height="90">
+  <p style="font-size: 10px; color: gray;">mlp adapter</p>
+</div>
+
 ### 多模态旋转位置编码: 3D ROPE    
 embedding的位置编码将ROPE解构成三个维度，时间，空间height，空间width。位置标记序号(t, h, w)，t用于定位视频帧号，(h, w)用于定位帧的patch位置。文本的三个坐标相同，取上一个模态的max(t, h, w)。
-
 <div align="center">
   <img src="doc/mrope.png" alt="mrope" width="925" height="289">
   <p style="font-size: 10px; color: gray;">mrope示意</p>
@@ -75,8 +81,9 @@ M-ROPE在时间维度上分配patch ID自适应fps, 基本逻辑是fps越小 -->
 > * 按全局进行注意力，计算qk次数=256 * 256 = 65536，计算`QK*V`浮点数运算次数`256*256*d_model`
 > * 按窗口进行注意力，计算qk次数=4 * (64 * 64) = 16384，计算`QK*V`浮点数运算次数`4*64*64*d_model`，都降低了4倍的计算量
 
+
 ## 04 qwenVL系列与llava主要差异  
-* adapter: qwenVL系列采用cross-attention，query使用可学习的embedding矩阵。llava采用一个2×MLP层或线性层
+* adapter: qwenVL最开始采用cross-attention，query使用可学习的embedding矩阵。llava采用一个2×MLP层或线性层。后续qwenVL与llava相同
 * image patch process: qwenVL2后采用ROPE，llava沿用vit的三角绝对位置编码，后续为了加强位置关系捕捉，llava-1.6对一张图片裁剪四个区域和整图区域五张图作为输入
 * trainning: qwenVL系列要经历全量训练的过程，llava只训练一个adapter和微调llm，训练效率更高
 * llava训练使用的数据量更小，时间更少，是一个数量级的差距

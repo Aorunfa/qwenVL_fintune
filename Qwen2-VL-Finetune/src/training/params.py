@@ -5,7 +5,9 @@ from transformers import TrainingArguments
 
 @dataclass
 class ModelArguments:
-    model_id: Optional[str] = field(default="/local/dev1/chaofeng/Qwen2.5-VL-3B-Instruct")
+    # model_id: Optional[str] = field(default="/local/dev1/chaofeng/Qwen2.5-VL-3B-Instruct")
+    model_id: Optional[str] = field(default="/local/dev1/chaofeng/Qwen2-VL-2B")
+
 
 
 @dataclass
@@ -36,7 +38,7 @@ class TrainingArguments(TrainingArguments):
     warmup_ratio: float =  0.03 
     lr_scheduler_type: str =  "cosine"
     logging_steps: int = 1
-    tf32: bool = True                                  # TODO 弄清楚这个东西是做什么的
+    tf32: bool = True                                   # 启动tf32训练，具备fp32范围和fp16的截断，只优化矩阵运算效率
     gradient_checkpointing: bool = True
     report_to: str = 'tensorboard'
     #lazy_preprocess: bool = True
@@ -73,9 +75,9 @@ class TrainingArguments(TrainingArguments):
     # lora config
     lora_enable: bool = True
     vision_lora: bool = True
-    use_dora: bool = False       #### 确定这个参数作用
+    use_dora: bool = False                                  # 是否启用动态秩调整，dora微调，设计一个动态过程调整lora_rank
     lora_rank: int = 64
-    lora_alpha: int = 64         # 平滑每个step lora W 对原来Linear的影响
+    lora_alpha: int = 64                                    # 平滑每个step lora W 对原来Linear的影响
     lora_dropout: float = 0.05
     lora_weight_path: str = ""
     lora_bias: str = "none"
@@ -83,7 +85,7 @@ class TrainingArguments(TrainingArguments):
     merger_lr: Optional[float] = None
     lora_namespan_exclude: str = field(default=None, metadata={"help": "List of namespan to exclude for LoRA"})
     
-    num_lora_modules: int = -1   #### 确定什么作用
+    num_lora_modules: int = -1   #### TODO 确定什么作用
 
 
 @dataclass

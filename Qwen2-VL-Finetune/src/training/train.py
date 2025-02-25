@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.insert(0, '/home/chaofeng/workhome/chaofeng/qwenVL_fintune/Qwen2-VL-Finetune/src')
-os.system('CUDA_VISIBLE_DEVICES') = '6'
+os.environ['CUDA_VISIBLE_DEVICES'] = '6'
 
 import torch
 from peft import LoraConfig, get_peft_model
@@ -59,6 +59,7 @@ def configure_llm(model, training_args):
 
     llm_params = model.model.parameters()
     set_requires_grad(llm_params, not training_args.freeze_llm)
+
 
 
 def train():
@@ -154,7 +155,7 @@ def train():
     #     model.enable_input_require_grads()                                                          
     #     training_args.gradient_checkpointing_kwargs = {"use_reentrant": True}
 
-
+    
     if training_args.lora_enable:
         lora_namespan_exclude = training_args.lora_namespan_exclude
         peft_config = LoraConfig(
@@ -162,7 +163,8 @@ def train():
             lora_alpha=training_args.lora_alpha,
             target_modules=find_target_linear_names(model, lora_namespan_exclude=lora_namespan_exclude, num_lora_modules=training_args.num_lora_modules),
             lora_dropout=training_args.lora_dropout,
-            bias=training_args.lora_bias                # lora layer bias trainning
+            bias=training_args.lora_bias,                # lora layer bias trainning
+            use_dora=training_args.use_dora
         )
         if training_args.bits == 16:
             if training_args.bf16:
