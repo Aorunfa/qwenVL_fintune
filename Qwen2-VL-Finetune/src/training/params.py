@@ -16,26 +16,30 @@ class TrainingArguments(TrainingArguments):
     adam_beta2: float = field(default=0.999)
     adam_epsilon: float = field(default=1e-8)
 
-    freeze_vision_tower: bool = field(default=True)
-    freeze_llm: bool = field(default=True)
-    tune_merger: bool = field(default=False)
+    freeze_vision_tower: bool = field(default=True)     # vison encoder
+    freeze_llm: bool = field(default=True)              # llm
+    tune_merger: bool = field(default=False)            # fintune adapter 
     disable_flash_attn2: bool = field(default=False)
+
+    bf16: bool = True
+    fp16: bool = False
+
 
     # self add 
     output_dir: Optional[str] = field(default='output/lora_vision_test')
     num_train_epochs: int = field(default=1)
     per_device_train_batch_size: int = field(default=4)
-    gradient_accumulation_steps: int = field(default=64)
+    gradient_accumulation_steps: int = field(default=32)
 
     learning_rate: float = 2e-4
     weight_decay: float = 0.1
     warmup_ratio: float =  0.03 
     lr_scheduler_type: str =  "cosine"
     logging_steps: int = 1
-    tf32: bool = True
+    tf32: bool = True                                  # TODO 弄清楚这个东西是做什么的
     gradient_checkpointing: bool = True
     report_to: str = 'tensorboard'
-    lazy_preprocess: bool = True
+    #lazy_preprocess: bool = True
     save_strategy: str = "steps"
     save_steps: int = 200
     save_total_limit: int = 10
@@ -65,17 +69,20 @@ class TrainingArguments(TrainingArguments):
         default=16,
         metadata={"help": "How many bits to use."}
     )
+
+    # lora config
     lora_enable: bool = True
     vision_lora: bool = True
     use_dora: bool = False       #### 确定这个参数作用
     lora_rank: int = 64
-    lora_alpha: int = 64         #### scale 缩放因子
+    lora_alpha: int = 64         # 平滑每个step lora W 对原来Linear的影响
     lora_dropout: float = 0.05
     lora_weight_path: str = ""
     lora_bias: str = "none"
     vision_lr: Optional[float] = None
     merger_lr: Optional[float] = None
     lora_namespan_exclude: str = field(default=None, metadata={"help": "List of namespan to exclude for LoRA"})
+    
     num_lora_modules: int = -1   #### 确定什么作用
 
 
@@ -85,14 +92,17 @@ class DataArguments:
         default='/local/dev1/chaofeng/LLaVA-CC3M-Pretrain-595K/chat.json', 
         metadata={"help": "Path to the training data."}
     )
-    lazy_preprocess: bool = False
+    lazy_preprocess: bool = True
     image_folder: Optional[str] = field(default='/local/dev1/chaofeng/LLaVA-CC3M-Pretrain-595K/images')
     
     image_min_pixels: Optional[int] = field(default=256 * 28 * 28)
     image_max_pixels: Optional[int] = field(default=1280 * 28 * 28)
+    
+    ### TODO 弄清楚这个视频数据处理的参数，set train for video
     video_min_pixels: Optional[int] = field(default=100352)
     video_max_pixels: Optional[int] = field(default=602112)
     fps: float = 1.0
+    
 
 
 # @dataclass

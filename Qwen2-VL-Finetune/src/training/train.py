@@ -1,4 +1,8 @@
+import sys
 import os
+sys.path.insert(0, '/home/chaofeng/workhome/chaofeng/qwenVL_fintune/Qwen2-VL-Finetune/src')
+os.system('CUDA_VISIBLE_DEVICES') = '6'
+
 import torch
 from peft import LoraConfig, get_peft_model
 import ast
@@ -39,14 +43,14 @@ def set_requires_grad(parameters, requires_grad):
         p.requires_grad = requires_grad
 
 def configure_vision_tower(model, training_args, compute_dtype, device):
-    vision_tower = model.visual
+    vision_tower = model.visual                                                         # vision encoder module
     vision_tower.to(dtype=compute_dtype, device=device)
 
     vision_model_params = model.visual.parameters()
     set_requires_grad(vision_model_params, not training_args.freeze_vision_tower)
     
     # Handle merger specifically
-    merger_params = model.visual.merger.parameters()
+    merger_params = model.visual.merger.parameters()                                    # adapter layer module
     set_requires_grad(merger_params, training_args.tune_merger)
 
 def configure_llm(model, training_args):
@@ -65,7 +69,7 @@ def train():
     
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
     
-    if "Qwen2.5" in model_args.model_id:
+    if "Qwen2.5" in model_args.model_id:                                                                    # apply flash-atten
         # Liger-kernel for Qwen2.5 is not supported yet.
         replace_qwen2_5_with_mixed_modality_forward()
     else:
@@ -82,31 +86,33 @@ def train():
         assert not training_args.vision_lora, \
             "Error: training_args.lora_enable is not enabled, but training_args.vision_lora is enabled."
         
-    if training_args.vision_lora and not training_args.freeze_vision_tower:
+    if training_args.vision_lora and not training_args.freeze_vision_tower:                                 # first get freeze and then apply lora layer 
         raise ValueError("If `vision_lora` is True, `freeze_vision_tower` must also be True.")
 
     else:
         if training_args.lora_namespan_exclude is not None:
-            training_args.lora_namespan_exclude = ast.literal_eval(training_args.lora_namespan_exclude)
+            training_args.lora_namespan_exclude = ast.literal_eval(training_args.lora_namespan_exclude)     # sale eval python list,dict,tuple...
         else:
             training_args.lora_namespan_exclude = []
 
         if not training_args.vision_lora:
-            training_args.lora_namespan_exclude += ["visual"]
+            training_args.lora_namespan_exclude += ["visual"]                                               
 
     local_rank = training_args.local_rank
     compute_dtype = (torch.float16 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
 
-    bnb_model_from_pretrained_args = {}
+    bnb_model_from_pretrained_args = {}                     # 低bit训练配置
     if training_args.bits in [4,8]:
         bnb_model_from_pretrained_args.update(dict(
             device_map={"":training_args.device},
-            quantization_config = BitsAndBytesConfig(
+            quantization_config = BitsAndBytesConfig(       # 量化设置
                 load_in_4bit=training_args.bits==4,
                 load_in_8bit=training_args.bits==8,
-                llm_int8_skip_modules=["visual"],
-                llm_int8_threshold=6.0,
-                llm_int8_has_fp16_weight=False,
+                llm_int8_skip_modules=["visual"],           # 不进行8bit量化的module
+                llm_int8_threshold=6.0,                     # outliers 保留原始精度
+                llm_int8_has_fp16_weight=False,             # 混合精度，适用存在outliers、不量化数值敏感层
+
+                # 4bit config
                 bnb_4bit_compute_dtype=compute_dtype,
                 bnb_4bit_use_double_quant=training_args.double_quant,
                 bnb_4bit_quant_type=training_args.quant_type,
@@ -128,19 +134,26 @@ def train():
             **bnb_model_from_pretrained_args
         )
 
-    model.config.use_cache = False
+    model.config.use_cache = False                                                                  # training unable
     model_to_configure = model
-    configure_llm(model_to_configure, training_args)
-    configure_vision_tower(model_to_configure, training_args, compute_dtype, training_args.device)
+    configure_llm(model_to_configure, training_args)                                                # setup llm grad
+    configure_vision_tower(model_to_configure, training_args, compute_dtype, training_args.device)  # setup vision encoder grad
+
+
+    if training_args.gradient_checkpointing:
+        model.enable_input_require_grads()                                                          # 保留输入经过嵌入层后的输出的梯度，用于重启梯度计算。即便嵌入层是冻结的
+        training_args.gradient_checkpointing_kwargs = {"use_reentrant": True}
 
     if training_args.bits in [4,8]:
-        model.config.torch_dtype = (torch.float32 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
+        # model.config.torch_dtype = (torch.float32 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
+        model.config.torch_dtype = (torch.float16 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
         from peft import prepare_model_for_kbit_training
-        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=training_args.gradient_checkpointing, gradient_checkpointing_kwargs={"use_reentrant": True})
-    
-    if training_args.gradient_checkpointing:
-        model.enable_input_require_grads()
-        training_args.gradient_checkpointing_kwargs = {"use_reentrant": True}
+        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=training_args.gradient_checkpointing, gradient_checkpointing_kwargs={"use_reentrant": True})      # use_reentrant 提高性能参数
+
+    # if training_args.gradient_checkpointing:
+    #     model.enable_input_require_grads()                                                          
+    #     training_args.gradient_checkpointing_kwargs = {"use_reentrant": True}
+
 
     if training_args.lora_enable:
         lora_namespan_exclude = training_args.lora_namespan_exclude
@@ -149,7 +162,7 @@ def train():
             lora_alpha=training_args.lora_alpha,
             target_modules=find_target_linear_names(model, lora_namespan_exclude=lora_namespan_exclude, num_lora_modules=training_args.num_lora_modules),
             lora_dropout=training_args.lora_dropout,
-            bias=training_args.lora_bias
+            bias=training_args.lora_bias                # lora layer bias trainning
         )
         if training_args.bits == 16:
             if training_args.bf16:
@@ -160,15 +173,15 @@ def train():
         model = get_peft_model(model, peft_config)
 
     processor = AutoProcessor.from_pretrained(model_args.model_id,
-                                            # The default setting is padding_side="left"
-                                            # When training using the right-side padding is more efficient.
-                                              padding_side="right")
+                                              # The default setting is padding_side="left"
+                                              # When training using the right-side padding is more efficient.
+                                              padding_side="right") # return tokenizer and image process
 
     # model.config.tokenizer_model_max_length = processor.tokenizer.model_max_length
     model.config.tokenizer_padding_side = processor.tokenizer.padding_side
     model.config.vision_lr = training_args.vision_lr
 
-    if training_args.bits in [4, 8]:
+    if training_args.bits in [4, 8]:                    # 取消量化敏感层和lora layer
         from peft.tuners.lora import LoraLayer
         for name, module in model.named_modules():
             if isinstance(module, LoraLayer):
@@ -183,15 +196,15 @@ def train():
                         module = module.to(torch.bfloat16)
 
     data_module = make_supervised_data_module(model_id=model_args.model_id,
-                                              processor=processor,
-                                              data_args=data_args)
+                                              processor=processor, 
+                                              data_args=data_args) # return dataset and collect_fun
 
     trainer = QwenTrainer(
         model=model,
         processor=processor,
         args=training_args,
         **data_module
-    )
+    )                                                               # trainer auto set dataloader, optimizer, train loops
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         trainer.train(resume_from_checkpoint=True)
@@ -205,11 +218,11 @@ def train():
     if training_args.lora_enable:
         state_dict = get_peft_state_maybe_zero_3(
             model.named_parameters(), training_args.lora_bias
-        )
+        )                                                           # get lora statedict
 
         non_lora_state_dict = get_peft_state_non_lora_maybe_zero_3(
             model.named_parameters(), require_grad_only=False
-        )
+        )                                                           # get none lora but trainable statedict
 
         if local_rank == 0 or local_rank == -1:
             model.config.save_pretrained(training_args.output_dir)

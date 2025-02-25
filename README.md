@@ -84,11 +84,24 @@ M-ROPE在时间维度上分配patch ID自适应fps, 基本逻辑是fps越小 -->
 
 
 ## 微调实战
-环境准备
+模型微调使用[repo](https://github.com/2U1/Qwen2-VL-Finetune)，主要依赖于transformer库进组件进行训练，代码风格与llava相同，我在这主要做了一下代码注释，以及适配单卡运行脚本，阅读代码原理，参照本项目`/Qwen2-VL-Finetune`
 
-数据下载
 
-模型下载
+### 环境准备
+```bash
+cd qwenVL_fintune/
+conda create -n qw python=3.10
+conda activate qw
+pip install -r requirements.txt
+```
 
-启动训练
+### 数据和模型下载
+数据使用llava微调数据集[LLaVA-CC3M-Pretrain-595K](https://huggingface.co/datasets/liuhaotian/LLaVA-CC3M-Pretrain-595K)，下载并解压到对应目录下，修改文件'qwenVL_fintune/Qwen2-VL-Finetune/src/training/params.py'文件下DataArguments的图片路径和索引json文件路径
+
+模型使用qwenVL2-5-3B进行微调[link](https://huggingface.co/Qwen/Qwen2.5-VL-3B-Instruct)，下载后对应修改ModelArguments里面的model_id为对应的模型路径
+
+### 启动训练
+- 单卡启动: 用于原理阅读、代码调试，可以直接运行```python qwenVL_fintune/Qwen2-VL-Finetune/src/training/train.py```，可以在debug模式下进入代码内部，transformer的微调方法介绍请参照我的另一个仓库[llava_finetune](https://github.com/Aorunfa/llava_finetune)
+
+- 多卡启动deepseed分布式训练: 请参照`qwenVL_fintune/Qwen2-VL-Finetune`仓库，使用deepseed+transformer进行分布式训练
 
